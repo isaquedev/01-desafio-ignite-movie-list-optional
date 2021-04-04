@@ -1,10 +1,7 @@
 import { useEffect, useState } from 'react';
 
-import { Button } from './components/Button';
-import { MovieCard } from './components/MovieCard';
-
-// import { SideBar } from './components/SideBar';
-// import { Content } from './components/Content';
+import Content from './components/Content';
+import SideBar from './components/SideBar';
 
 import { api } from './services/api';
 
@@ -12,44 +9,28 @@ import './styles/global.scss';
 
 import './styles/sidebar.scss';
 import './styles/content.scss';
-
-interface GenreResponseProps {
-  id: number;
-  name: 'action' | 'comedy' | 'documentary' | 'drama' | 'horror' | 'family';
-  title: string;
-}
-
-interface MovieProps {
-  imdbID: string;
-  Title: string;
-  Poster: string;
-  Ratings: Array<{
-    Source: string;
-    Value: string;
-  }>;
-  Runtime: string;
-}
+import { ApiResponse, Genre, Movie } from './types';
 
 export function App() {
   const [selectedGenreId, setSelectedGenreId] = useState(1);
 
-  const [genres, setGenres] = useState<GenreResponseProps[]>([]);
+  const [genres, setGenres] = useState<Genre[]>([]);
 
-  const [movies, setMovies] = useState<MovieProps[]>([]);
-  const [selectedGenre, setSelectedGenre] = useState<GenreResponseProps>({} as GenreResponseProps);
+  const [movies, setMovies] = useState<Movie[]>([]);
+  const [selectedGenre, setSelectedGenre] = useState<Genre>({} as Genre);
 
   useEffect(() => {
-    api.get<GenreResponseProps[]>('genres').then(response => {
+    api.get('genres').then((response: ApiResponse<Genre[]>) => {
       setGenres(response.data);
     });
   }, []);
 
   useEffect(() => {
-    api.get<MovieProps[]>(`movies/?Genre_id=${selectedGenreId}`).then(response => {
+    api.get(`movies/?Genre_id=${selectedGenreId}`).then((response: ApiResponse<Movie[]>) => {
       setMovies(response.data);
     });
 
-    api.get<GenreResponseProps>(`genres/${selectedGenreId}`).then(response => {
+    api.get(`genres/${selectedGenreId}`).then((response: ApiResponse<Genre>) => {
       setSelectedGenre(response.data);
     })
   }, [selectedGenreId]);
@@ -60,36 +41,10 @@ export function App() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'row' }}>
-      <nav className="sidebar">
-        <span>Watch<p>Me</p></span>
 
-        <div className="buttons-container">
-          {genres.map(genre => (
-            <Button
-              key={String(genre.id)}
-              title={genre.title}
-              iconName={genre.name}
-              onClick={() => handleClickButton(genre.id)}
-              selected={selectedGenreId === genre.id}
-            />
-          ))}
-        </div>
+      <SideBar genres={genres} handleClickButton={handleClickButton} selectedGenreId={selectedGenreId}/>      
 
-      </nav>
-
-      <div className="container">
-        <header>
-          <span className="category">Categoria:<span> {selectedGenre.title}</span></span>
-        </header>
-
-        <main>
-          <div className="movies-list">
-            {movies.map(movie => (
-              <MovieCard key ={movie.imdbID} title={movie.Title} poster={movie.Poster} runtime={movie.Runtime} rating={movie.Ratings[0].Value} />
-            ))}
-          </div>
-        </main>
-      </div>
+      <Content movies={movies} selectedGenre={selectedGenre}/>
     </div>
   )
 }
